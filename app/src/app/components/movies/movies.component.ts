@@ -13,28 +13,24 @@ import { map, startWith, switchMap, catchError } from 'rxjs/operators';
   templateUrl: './movies.component.html',
   styleUrls: ['./movies.component.scss']
 })
-export class MoviesComponent implements OnInit, AfterViewInit {
+export class MoviesComponent implements AfterViewInit {
   displayedColumns: string[] = ['Title', 'Year', 'imdbID'];
-  data: IMovieData[] = [];
   dataSource: MatTableDataSource<IMovieData>;
 
   resultsLength = 0;
   isLoadingResults = true;
   isRateLimitReached = false;
+  filterValue: string;
 
-  @ViewChild(MatPaginator, { static: true }) paginator: MatPaginator;
-  @ViewChild(MatSort, { static: true }) sort: MatSort;
+  @ViewChild(MatPaginator) paginator: MatPaginator;
+  @ViewChild(MatSort) sort: MatSort;
 
-  constructor(private readonly serverCommunicationService: ServerCommunicationService) {}
-
-  ngAfterViewInit(): void {
-    this.dataSource = new MatTableDataSource(this.data);
-    this.dataSource.paginator = this.paginator;
+  constructor(private readonly serverCommunicationService: ServerCommunicationService) {
+    this.dataSource = new MatTableDataSource();
     this.dataSource.sort = this.sort;
   }
 
-  ngOnInit(): void {
-    // If the user changes the sort order, reset back to the first page.
+  ngAfterViewInit(): void {
     this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
 
     merge(this.sort.sortChange, this.paginator.page)
@@ -42,14 +38,15 @@ export class MoviesComponent implements OnInit, AfterViewInit {
         startWith({}),
         switchMap(() => {
           this.isLoadingResults = true;
+          if (this.filterValue) {
+            return this.serverCommunicationService.getSearchedMoviesData(this.filterValue, this.paginator.pageIndex);
+          }
           return this.serverCommunicationService.getStoresMovieData(this.paginator.pageIndex);
         }),
         map(data => {
-          // Flip flag to show that loading has finished.
           this.isLoadingResults = false;
           this.isRateLimitReached = false;
           this.resultsLength = data.total;
-          // Assign the data to the data source for the table to render
           return data.data;
         }),
         catchError(() => {
@@ -57,12 +54,21 @@ export class MoviesComponent implements OnInit, AfterViewInit {
           this.isRateLimitReached = true;
           return observableOf([]);
         })
-      ).subscribe(data => this.data = data);
+      ).subscribe(data => this.dataSource.data = data);
   }
 
   applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+    this.filterValue = (event.target as HTMLInputElement).value;
+    this.paginator.pageIndex = 0;
+
+    this.serverCommunicationService.getSearchedMoviesData(this.filterValue, this.paginator.pageIndex).subscribe(data => {
+      this.isLoadingResults = false;
+      this.isRateLimitReached = false;
+
+      this.resultsLength = data.total;
+      this.dataSource.data = data.data;
+      this.dataSource.filter = this.filterValue;
+    });
 
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();

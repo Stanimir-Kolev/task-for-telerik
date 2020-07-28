@@ -18,12 +18,14 @@ export class ServerCommunicationService {
     return this.http.get<IStoresMovieData>(getSearchURL);
   }
 
-  getSearchedMoviesData(searchTitle: string, pageIndex: number): Observable<IStoresMovieData> {
+  getSearchedMoviesData(searchTitle: string, pageNumber: number): Observable<IStoresMovieData> {
     let getSearchURL = this.moviesURL + 'search/';
-    if (searchTitle) {
+    if (searchTitle && pageNumber >= 0) {
+      getSearchURL += `?Title=${searchTitle}&page=${pageNumber + 1}`;
+    } else {
       getSearchURL += `?Title=${searchTitle}`;
     }
-    // if (pageIndex >= 0) {}
+
     return this.http.get<IStoresMovieData>(getSearchURL);
   }
 }
