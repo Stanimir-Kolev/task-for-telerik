@@ -12,11 +12,10 @@
     </mat-form-field>
 
     <div class="movie-table-container">
-        <table mat-table [dataSource]="dataSource.data" class="movie-table" matSort matSortActive="created" matSortDisableClear
-            matSortDirection="asc">
+        <table mat-table [dataSource]="dataSource.data" class="movie-table">
 
             <ng-container matColumnDef="Title">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+                <th mat-header-cell *matHeaderCellDef>Title</th>
                 <td mat-cell *matCellDef="let row">{{row.Title}}</td>
             </ng-container>
 

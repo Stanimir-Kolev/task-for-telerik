@@ -13,7 +13,7 @@ export class ServerCommunicationService {
   getStoresMovieData(pageIndex: number): Observable<IStoresMovieData> {
     let getSearchURL = this.moviesURL;
     if (pageIndex >= 0) {
-      getSearchURL += `?page=${pageIndex}`;
+      getSearchURL += `?page=${pageIndex + 1}`;
     }
     return this.http.get<IStoresMovieData>(getSearchURL);
   }
